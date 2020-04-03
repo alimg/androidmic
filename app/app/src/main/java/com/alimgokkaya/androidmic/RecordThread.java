@@ -24,7 +24,7 @@ public class RecordThread extends Thread{
     @Override
     public void run() {
         AudioRecord audio = new AudioRecord(MediaRecorder.AudioSource.MIC, sampleRate,
-                AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT,	bufferSize);
+                AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSize);
 
         audio.startRecording();
         byte[] buffer = new byte[4096];
@@ -61,30 +61,25 @@ public class RecordThread extends Thread{
         // 44100, 22050, 16000, 11025, 8000.
         int[] samplingRates = {44100, 22050, 16000, 11025, 8000};
 
-        for (int i = 0; i < samplingRates.length; ++i)
-        {
-            try
-            {
-                int min = AudioRecord.getMinBufferSize(samplingRates[i],
-                        AudioFormat.CHANNEL_CONFIGURATION_MONO,
+        for (int samplingRate : samplingRates) {
+            try {
+                int min = AudioRecord.getMinBufferSize(samplingRate,
+                        AudioFormat.CHANNEL_IN_MONO,
                         AudioFormat.ENCODING_PCM_16BIT);
                 if (min < 4096)
                     min = 4096;
-                AudioRecord record = new AudioRecord(MediaRecorder.AudioSource.MIC, samplingRates[i],
-                        AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT,	min);
+                AudioRecord record = new AudioRecord(MediaRecorder.AudioSource.MIC, samplingRate,
+                        AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, min);
 
 
-                if (record.getState() == AudioRecord.STATE_INITIALIZED)
-                {
+                if (record.getState() == AudioRecord.STATE_INITIALIZED) {
                     int srate = record.getSampleRate();
                     Log.d("Recorder", "Audio recorder initialised at " + srate);
                     record.release();
-                    return new int[]{srate,min};
+                    return new int[]{srate, min};
                 }
                 record.release();
-            }
-            catch (IllegalArgumentException e)
-            {
+            } catch (IllegalArgumentException e) {
                 // Meh. Try the next one.
             }
         }

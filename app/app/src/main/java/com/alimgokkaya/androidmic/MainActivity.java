@@ -1,16 +1,21 @@
 package com.alimgokkaya.androidmic;
 
+import android.Manifest;
+import android.app.Activity;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.TextView;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -21,7 +26,7 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 
 public class MainActivity extends AppCompatActivity {
-
+    private static final int REQUEST_MIC_PERMISSION = 0xcafe;
     private static final int SERVER_PORT = 9900;
     private EditText mEditIp;
     private RecordThread recordThread;
@@ -32,7 +37,7 @@ public class MainActivity extends AppCompatActivity {
     private View mBtnStop;
 
 
-    public class UdpStreamClient implements RecordingListener {
+    public static class UdpStreamClient implements RecordingListener {
 
         private InetAddress hostAddress;
         private DatagramSocket mSocket;
@@ -100,13 +105,13 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-
-        int[] srinfo = RecordThread.findSampleRate();
-        sampleRate = srinfo[0];
-        bufferSize = srinfo[1];
-        Log.d("Main", "Recording "+sampleRate+" "+bufferSize);
-        showRecording(false);
-        mTextStatus.setText("Ready for streaming");
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.LOLLIPOP) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.RECORD_AUDIO)) {
+                }
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_MIC_PERMISSION);
+            } else initRecording();
+        }
     }
 
     private void showRecording(boolean recording) {
@@ -128,6 +133,24 @@ public class MainActivity extends AppCompatActivity {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
+    }
+
+    private void initRecording() {
+        int[] srinfo = RecordThread.findSampleRate();
+        sampleRate = srinfo[0];
+        bufferSize = srinfo[1];
+        Log.d("Main", "Recording "+sampleRate+" "+bufferSize);
+        showRecording(false);
+        mTextStatus.setText("Ready for streaming");
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == REQUEST_MIC_PERMISSION) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                initRecording();
+            }
+        }
     }
 
     @Override
