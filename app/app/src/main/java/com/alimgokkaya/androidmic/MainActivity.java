@@ -111,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
                 }
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.RECORD_AUDIO}, REQUEST_MIC_PERMISSION);
             } else initRecording();
-        }
+        } else initRecording();
     }
 
     private void showRecording(boolean recording) {
